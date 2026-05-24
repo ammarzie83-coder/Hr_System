@@ -1,0 +1,124 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Hr_System</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Hr_System.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-page="/Index">Hr_System</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                        </li>
+                        @if (User.Identity?.IsAuthenticated ?? false)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/Employees/Index">الموظفون</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/Account/Logout">تسجيل الخروج (@User.Identity.Name)</a>
+                            </li>
+                            @if (User.IsInRole("Informatics"))
+                            {
+                                <li class="nav-item">
+                                    <button class="btn btn-outline-secondary ms-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#informaticsOffcanvas" aria-controls="informaticsOffcanvas">المعلوماتية</button>
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/Account/Login">تسجيل الدخول</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+                <strong>✓ نجاح!</strong> @successMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+                <strong>✗ خطأ!</strong> @errorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2026 - Hr_System - <a asp-area="" asp-page="/Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.alert-dismissible').forEach(function (alert) {
+                setTimeout(function () {
+                    var bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+
+            // حفظ آخر صفحة تم زيارتها
+            const currentPath = window.location.pathname;
+            // عدم حفظ صفحات اللوجن والخروج
+            if (currentPath !== '/Account/Login' && currentPath !== '/Account/Logout') {
+                // إرسال طلب AJAX لحفظ الصفحة الحالية في السشن
+                fetch('/SessionHelper?handler=SaveLastPage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ lastPage: currentPath })
+                }).catch(err => console.error('خطأ في حفظ الصفحة:', err));
+            }
+        });
+    </script>
+
+    @* Offcanvas for Informatics account management *@
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="informaticsOffcanvas" aria-labelledby="informaticsOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="informaticsOffcanvasLabel">قسم المعلوماتية</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <p>إدارة حسابات المستخدمين وأدوات المعلوماتية.</p>
+            <a class="btn btn-primary w-100 mb-2" asp-area="" asp-page="/Account/Manage">إدارة الحسابات</a>
+            <a class="btn btn-secondary w-100 mb-2" asp-area="" asp-page="/Audit/Index">سجل العمليات</a>
+        </div>
+    </div>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

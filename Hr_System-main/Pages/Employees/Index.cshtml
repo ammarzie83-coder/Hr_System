@@ -1,0 +1,66 @@
+@page
+@model Hr_System.Pages.Employees.IndexModel
+@{
+    ViewData["Title"] = "قائمة الموظفين";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2>الموظفون</h2>
+    </div>
+    <div>
+        @if (Model.CanAddEmployees)
+        {
+            <a asp-page="Create" class="btn btn-primary me-2">إضافة موظف جديد</a>
+        }
+        <a asp-page-handler="Export" class="btn btn-success">تصدير إكسل</a>
+    </div>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>الصورة</th>
+            <th>الاسم</th>
+            <th>الرقم الوطني</th>
+            <th>الوظيفة</th>
+            <th>القسم</th>
+            <th>الهاتف</th>
+            <th>البريد</th>
+            <th>تاريخ التعيين</th>
+            <th>الإجازات</th>
+            <th>المرفقات</th>
+            <th>الإجراءات</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var employee in Model.Employees)
+        {
+            <tr>
+                <td>
+                    <img src="@Url.Page("Photo", new { id = employee.Id })" alt="صورة" width="50" height="50" class="rounded" />
+                </td>
+                <td>@employee.FullName</td>
+                <td>@employee.NationalId</td>
+                <td>@employee.JobTitle</td>
+                <td>@employee.Department</td>
+                <td>@employee.Mobile</td>
+                <td>@employee.Email</td>
+                <td>@employee.HireDate.ToString("yyyy-MM-dd")</td>
+                <td>@employee.LeaveCount</td>
+                <td>@employee.AttachmentCount</td>
+                <td>
+                    <a asp-page="Details" asp-route-id="@employee.Id" class="btn btn-sm btn-info mb-1">عرض</a>
+                    @if (Model.CanEditEmployees)
+                    {
+                        <a asp-page="Edit" asp-route-id="@employee.Id" class="btn btn-sm btn-warning mb-1">تعديل</a>
+                    }
+                    @if (Model.CanDeleteEmployees)
+                    {
+                        <a asp-page="Delete" asp-route-id="@employee.Id" class="btn btn-sm btn-danger mb-1">حذف</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

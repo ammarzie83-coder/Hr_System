@@ -1,0 +1,18 @@
+@page "{id:int}"
+@model Hr_System.Pages.Employees.DeleteModel
+@{
+    ViewData["Title"] = "حذف موظف";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2>حذف الموظف</h2>
+        <div class="alert alert-warning">
+            هل أنت متأكد من حذف الموظف <strong>@Model.FullName</strong>؟ هذا الإجراء سيزيل البيانات والمرفقات المرتبطة به.
+        </div>
+        <form method="post">
+            <button type="submit" class="btn btn-danger">نعم، حذف</button>
+            <a asp-page="Index" class="btn btn-secondary ms-2">إلغاء</a>
+        </form>
+    </div>
+</div>

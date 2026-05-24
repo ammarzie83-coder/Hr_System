@@ -1,0 +1,89 @@
+@page "{id:int}"
+@model Hr_System.Pages.Employees.DetailsModel
+@{
+    ViewData["Title"] = "تفاصيل الموظف";
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <a href="@Url.Page("Photo", new { id = Model.EmployeeId })" target="_blank">
+                <img src="@Url.Page("Photo", new { id = Model.EmployeeId })" class="card-img-top" alt="صورة الموظف" />
+            </a>
+            <div class="card-body">
+                <h5 class="card-title">@Model.FullName</h5>
+                <p class="card-text"><strong>الوظيفة:</strong> @Model.JobTitle</p>
+                <p class="card-text"><strong>القسم:</strong> @Model.Department</p>
+                <p class="card-text"><strong>الهاتف:</strong> @Model.Mobile</p>
+                <p class="card-text"><strong>البريد:</strong> @Model.Email</p>
+                <p class="card-text"><strong>تاريخ التعيين:</strong> @Model.HireDate.ToString("yyyy-MM-dd")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="mb-4">
+            <h4>المرفقات</h4>
+            @if (Model.Attachments.Any())
+            {
+                <ul class="list-group mb-3">
+                    @foreach (var file in Model.Attachments)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>@file.FileName</span>
+                            <div>
+                                <a asp-page="DownloadAttachment" asp-route-id="@file.Id" target="_blank" class="btn btn-sm btn-outline-primary">فتح</a>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="alert alert-secondary">لا توجد مرفقات حتى الآن.</div>
+            }
+
+            @* إضافة المرفقات نُقلت إلى صفحة التعديل *@
+        </div>
+
+        <div>
+            <h4>الإجازات</h4>
+            @* إضافة الإجازات نُقلت إلى صفحة التعديل *@
+            @if (Model.Leaves.Any())
+            {
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>نوع الإجازة</th>
+                            <th>من</th>
+                            <th>إلى</th>
+                            <th>السبب</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var leave in Model.Leaves)
+                        {
+                            <tr>
+                                <td>@leave.LeaveType</td>
+                                <td>@leave.StartDate.ToString("yyyy-MM-dd")</td>
+                                <td>@leave.EndDate.ToString("yyyy-MM-dd")</td>
+                                <td>@leave.Reason</td>
+                                <td>@leave.Status</td>
+                                <td>—</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="alert alert-secondary">لا توجد إجازات لهذا الموظف.</div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

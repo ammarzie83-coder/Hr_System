@@ -1,0 +1,42 @@
+@page
+@model Hr_System.Pages.Audit.IndexModel
+@{
+    ViewData["Title"] = "سجل العمليات";
+}
+
+<div class="row">
+    <div class="col-12">
+        <h2>سجل العمليات</h2>
+        <p class="text-muted">يعرض آخر 500 عملية تمت على قاعدة البيانات.</p>
+
+        <table class="table table-bordered table-striped table-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>Id</th>
+                    <th>الوقت</th>
+                    <th>المستخدم</th>
+                    <th>الجدول</th>
+                    <th>الإجراء</th>
+                    <th>المفاتيح</th>
+                    <th>القيم القديمة</th>
+                    <th>القيم الجديدة</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model.Logs)
+                {
+                    <tr>
+                        <td>@l.Id</td>
+                        <td>@l.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@l.ChangedBy</td>
+                        <td>@l.TableName</td>
+                        <td>@l.Action</td>
+                        <td><pre class="mb-0" style="white-space:pre-wrap;max-width:250px;">@l.KeyValues</pre></td>
+                        <td><pre class="mb-0" style="white-space:pre-wrap;max-width:300px;">@l.OldValues</pre></td>
+                        <td><pre class="mb-0" style="white-space:pre-wrap;max-width:300px;">@l.NewValues</pre></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

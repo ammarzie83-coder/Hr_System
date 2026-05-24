@@ -1,0 +1,134 @@
+@page
+@model Hr_System.Pages.Account.ManageModel
+@{
+    ViewData["Title"] = "إدارة الحسابات";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<h3>إنشاء حساب جديد</h3>
+<form method="post" asp-page-handler="Create" class="row g-3 mb-4" id="createAccountForm">
+    <div class="col-12">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">اسم المستخدم</label>
+        <input asp-for="Input.Username" class="form-control" />
+        <span asp-validation-for="Input.Username" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">كلمة المرور</label>
+        <input asp-for="Input.Password" type="password" class="form-control" />
+        <span asp-validation-for="Input.Password" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">الاسم الظاهر</label>
+        <input asp-for="Input.DisplayName" class="form-control" />
+        <span asp-validation-for="Input.DisplayName" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">الدور</label>
+        <input asp-for="Input.Role" class="form-control" />
+        <span asp-validation-for="Input.Role" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <div class="form-check mt-3">
+            <input asp-for="Input.IsInformatics" class="form-check-input" id="IsInformatics" />
+            <label class="form-check-label" for="IsInformatics">حساب معلوماتية (Informatics)</label>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <h5>الصلاحيات (تحديد)</h5>
+        <div class="form-check form-check-inline">
+            <input asp-for="Input.CanViewEmployees" class="form-check-input" />
+            <label class="form-check-label">عرض الموظفين</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input asp-for="Input.CanAddEmployees" class="form-check-input" />
+            <label class="form-check-label">إضافة موظفين</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input asp-for="Input.CanEditEmployees" class="form-check-input" />
+            <label class="form-check-label">تعديل موظفين</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input asp-for="Input.CanDeleteEmployees" class="form-check-input" />
+            <label class="form-check-label">حذف موظفين</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input asp-for="Input.CanManageAttachments" class="form-check-input" />
+            <label class="form-check-label">عرض/إدارة المرفقات</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input asp-for="Input.CanViewAuditLogs" class="form-check-input" />
+            <label class="form-check-label">عرض سجل العمليات</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input asp-for="Input.CanEditAuditLogs" class="form-check-input" />
+            <label class="form-check-label">تعديل/إدارة سجل العمليات</label>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <button type="submit" class="btn btn-success">إنشاء حساب</button>
+    </div>
+</form>
+
+<h3>قائمة الحسابات</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>اسم المستخدم</th>
+            <th>الاسم الظاهر</th>
+            <th>الدور</th>
+            <th>مفعل</th>
+            <th>الإجراءات</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model.Users)
+        {
+            <tr>
+                <td>@u.Username</td>
+                <td>@u.DisplayName</td>
+                <td>@u.Role</td>
+                <td>@(u.IsActive ? "نعم" : "لا")</td>
+                <td>
+                    <form method="post" asp-page-handler="ToggleActive" class="d-inline">
+                        <input type="hidden" name="id" value="@u.Id" />
+                        <button type="submit" class="btn btn-sm @(u.IsActive ? "btn-warning" : "btn-primary")">@(u.IsActive ? "تعطيل" : "تفعيل")</button>
+                    </form>
+                    <a asp-page="Edit" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary ms-2">تعديل</a>
+                    <form method="post" asp-page-handler="SetInformatics" class="d-inline ms-2" onsubmit="return confirm('تأكيد: هل تريد تغيير حالة معلوماتية لهذا الحساب؟');">
+                        <input type="hidden" name="id" value="@u.Id" />
+                        <input type="hidden" name="setInformatics" value="@(u.Role == "Informatics" ? "false" : "true")" />
+                        <button type="submit" class="btn btn-sm @(u.Role == "Informatics" ? "btn-danger" : "btn-warning")">@(u.Role == "Informatics" ? "إلغاء معلوماتية" : "منح معلوماتية")</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        document.getElementById('createAccountForm').addEventListener('submit', function (e) {
+            var cb = document.getElementById('IsInformatics');
+            if (cb && cb.checked) {
+                var ok = confirm('تأكيد: سيتم إنشاء حساب كمعلوماتية وستحصل على صلاحيات كاملة. هل ترغب بالمتابعة؟');
+                if (!ok) {
+                    e.preventDefault();
+                }
+            }
+        });
+    </script>
+}

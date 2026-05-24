@@ -1,0 +1,59 @@
+@page
+@model Hr_System.Pages.Employees.CreateModel
+@{
+    ViewData["Title"] = "إضافة موظف";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2>إضافة موظف جديد</h2>
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label asp-for="Input.FullName" class="form-label"></label>
+                <input asp-for="Input.FullName" class="form-control" />
+                <span asp-validation-for="Input.FullName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.NationalId" class="form-label"></label>
+                <input asp-for="Input.NationalId" class="form-control" />
+                <span asp-validation-for="Input.NationalId" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.JobTitle" class="form-label"></label>
+                <input asp-for="Input.JobTitle" class="form-control" />
+                <span asp-validation-for="Input.JobTitle" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Department" class="form-label"></label>
+                <input asp-for="Input.Department" class="form-control" />
+                <span asp-validation-for="Input.Department" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Mobile" class="form-label"></label>
+                <input asp-for="Input.Mobile" class="form-control" />
+                <span asp-validation-for="Input.Mobile" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label"></label>
+                <input asp-for="Input.Email" class="form-control" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.HireDate" class="form-label"></label>
+                <input asp-for="Input.HireDate" class="form-control" type="date" />
+                <span asp-validation-for="Input.HireDate" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.PhotoUpload" class="form-label">صورة الموظف (JPEG أو PNG)</label>
+                <input asp-for="Input.PhotoUpload" class="form-control" type="file" accept="image/png,image/jpeg" />
+                <span asp-validation-for="Input.PhotoUpload" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">حفظ</button>
+            <a asp-page="Index" class="btn btn-secondary ms-2">إلغاء</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

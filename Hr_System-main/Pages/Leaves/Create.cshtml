@@ -1,0 +1,51 @@
+@page
+@model Hr_System.Pages.Leaves.CreateModel
+@{
+    ViewData["Title"] = "إضافة إجازة";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2>إضافة إجازة</h2>
+        <form method="post">
+            <input asp-for="EmployeeId" type="hidden" />
+            <div class="mb-3">
+                <label asp-for="Input.LeaveType" class="form-label"></label>
+                <input asp-for="Input.LeaveType" class="form-control" />
+                <span asp-validation-for="Input.LeaveType" class="text-danger"></span>
+            </div>
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label asp-for="Input.StartDate" class="form-label"></label>
+                    <input asp-for="Input.StartDate" class="form-control" type="date" />
+                    <span asp-validation-for="Input.StartDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.EndDate" class="form-label"></label>
+                    <input asp-for="Input.EndDate" class="form-control" type="date" />
+                    <span asp-validation-for="Input.EndDate" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Reason" class="form-label"></label>
+                <textarea asp-for="Input.Reason" class="form-control"></textarea>
+                <span asp-validation-for="Input.Reason" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Status" class="form-label"></label>
+                <select asp-for="Input.Status" class="form-select">
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+                <span asp-validation-for="Input.Status" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">حفظ</button>
+            <a asp-page="../Employees/Details" asp-route-id="@Model.EmployeeId" class="btn btn-secondary ms-2">رجوع</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

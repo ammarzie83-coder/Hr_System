@@ -1,0 +1,111 @@
+@page
+@model Hr_System.Pages.Account.EditModel
+@{
+    ViewData["Title"] = "تعديل الحساب";
+}
+
+<h1 class="mb-4">تعديل حساب المستخدم</h1>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            <input type="hidden" asp-for="Id" />
+            <div class="mb-3">
+                <label class="form-label">اسم المستخدم</label>
+                <input class="form-control" value="@Model.Username" readonly />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.DisplayName" class="form-label">اسم العرض</label>
+                <input asp-for="Input.DisplayName" class="form-control" />
+                <span asp-validation-for="Input.DisplayName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Role" class="form-label">الوظيفة / الدور</label>
+                <input asp-for="Input.Role" class="form-control" />
+                <span asp-validation-for="Input.Role" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.NewPassword" class="form-label">كلمة المرور الجديدة</label>
+                <input asp-for="Input.NewPassword" type="password" class="form-control" />
+                <span asp-validation-for="Input.NewPassword" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.ConfirmPassword" class="form-label">تأكيد كلمة المرور الجديدة</label>
+                <input asp-for="Input.ConfirmPassword" type="password" class="form-control" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="Input.IsInformatics" class="form-check-input" id="IsInformaticsEdit" />
+                <label asp-for="Input.IsInformatics" class="form-check-label">حساب معلوماتية (Informatics)</label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="Input.IsActive" class="form-check-input" id="IsActive" />
+                <label asp-for="Input.IsActive" class="form-check-label">مفعل</label>
+            </div>
+
+            <h5 class="mt-4">الصلاحيات</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input asp-for="Input.CanViewEmployees" class="form-check-input" />
+                        <label asp-for="Input.CanViewEmployees" class="form-check-label">عرض الموظفين</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.CanAddEmployees" class="form-check-input" />
+                        <label asp-for="Input.CanAddEmployees" class="form-check-label">إضافة موظف</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.CanEditEmployees" class="form-check-input" />
+                        <label asp-for="Input.CanEditEmployees" class="form-check-label">تعديل موظف</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.CanDeleteEmployees" class="form-check-input" />
+                        <label asp-for="Input.CanDeleteEmployees" class="form-check-label">حذف موظف</label>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input asp-for="Input.CanAddLeaves" class="form-check-input" />
+                        <label asp-for="Input.CanAddLeaves" class="form-check-label">إضافة إجازة</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.CanEditLeaves" class="form-check-input" />
+                        <label asp-for="Input.CanEditLeaves" class="form-check-label">تعديل إجازة</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.CanDeleteLeaves" class="form-check-input" />
+                        <label asp-for="Input.CanDeleteLeaves" class="form-check-label">حذف إجازة</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.CanManageAttachments" class="form-check-input" />
+                        <label asp-for="Input.CanManageAttachments" class="form-check-label">إدارة المرفقات</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.CanViewAuditLogs" class="form-check-input" />
+                        <label asp-for="Input.CanViewAuditLogs" class="form-check-label">عرض السجلات</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Input.CanEditAuditLogs" class="form-check-input" />
+                        <label asp-for="Input.CanEditAuditLogs" class="form-check-label">تعديل السجلات</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+                <a asp-page="Manage" class="btn btn-secondary ms-2">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

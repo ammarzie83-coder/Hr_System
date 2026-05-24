@@ -1,0 +1,181 @@
+@page "{id:int}"
+@model Hr_System.Pages.Employees.EditModel
+@{
+    ViewData["Title"] = "تعديل موظف";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2>تعديل بيانات الموظف</h2>
+        <form method="post" enctype="multipart/form-data">
+            <input type="hidden" asp-for="Id" />
+            <div class="mb-3">
+                <label asp-for="Input.FullName" class="form-label"></label>
+                <input asp-for="Input.FullName" class="form-control" />
+                <span asp-validation-for="Input.FullName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.NationalId" class="form-label"></label>
+                <input asp-for="Input.NationalId" class="form-control" />
+                <span asp-validation-for="Input.NationalId" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.JobTitle" class="form-label"></label>
+                <input asp-for="Input.JobTitle" class="form-control" />
+                <span asp-validation-for="Input.JobTitle" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Department" class="form-label"></label>
+                <input asp-for="Input.Department" class="form-control" />
+                <span asp-validation-for="Input.Department" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Mobile" class="form-label"></label>
+                <input asp-for="Input.Mobile" class="form-control" />
+                <span asp-validation-for="Input.Mobile" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label"></label>
+                <input asp-for="Input.Email" class="form-control" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.HireDate" class="form-label"></label>
+                <input asp-for="Input.HireDate" class="form-control" type="date" />
+                <span asp-validation-for="Input.HireDate" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.PhotoUpload" class="form-label">تحديث الصورة</label>
+                <input asp-for="Input.PhotoUpload" class="form-control" type="file" accept="image/png,image/jpeg" />
+                <span asp-validation-for="Input.PhotoUpload" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+            <a asp-page="Index" class="btn btn-secondary ms-2">إلغاء</a>
+        </form>
+
+        <hr />
+        <h4>إدارة المرفقات</h4>
+            @if (Model.CanManageAttachments)
+            {
+                <form method="post" enctype="multipart/form-data" asp-page-handler="AddAttachment" class="row g-3 mb-3">
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <div class="col-md-8">
+                        <input asp-for="AttachmentUpload" class="form-control" type="file" accept="application/pdf" />
+                        <span asp-validation-for="AttachmentUpload" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary">إضافة ملف PDF</button>
+                    </div>
+                </form>
+            }
+
+            @* عرض المرفقات مع إمكانية الحذف *@
+            <div class="mb-3">
+                <h5>المرفقات الحالية</h5>
+                @if (Model.Attachments.Any())
+                {
+                    <ul class="list-group mb-3">
+                        @foreach (var a in Model.Attachments)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>@a.FileName</span>
+                                <div>
+                                    <a asp-page="DownloadAttachment" asp-route-id="@a.Id" target="_blank" class="btn btn-sm btn-outline-primary me-2">فتح</a>
+                                    <form method="post" asp-page-handler="DeleteAttachment" class="d-inline">
+                                        <input type="hidden" name="Id" value="@Model.Id" />
+                                        <input type="hidden" name="attachmentId" value="@a.Id" />
+                                        <button type="submit" class="btn btn-sm btn-danger">حذف</button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="alert alert-secondary">لا توجد مرفقات.</div>
+                }
+            </div>
+
+            <h4>إضافة إجازة</h4>
+            @if (Model.CanAddLeaves)
+            {
+                <form method="post" asp-page-handler="AddLeave" class="mb-3">
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">نوع الإجازة</label>
+                            <input asp-for="LeaveInput.LeaveType" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">من</label>
+                            <input asp-for="LeaveInput.StartDate" class="form-control" type="date" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">إلى</label>
+                            <input asp-for="LeaveInput.EndDate" class="form-control" type="date" />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">السبب</label>
+                            <input asp-for="LeaveInput.Reason" class="form-control" />
+                        </div>
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-success mt-2">إضافة إجازة</button>
+                        </div>
+                    </div>
+                </form>
+            }
+            <div class="mb-3">
+                <h5>الإجازات الحالية</h5>
+                @if (Model.Leaves.Any())
+                {
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>نوع الإجازة</th>
+                                <th>من</th>
+                                <th>إلى</th>
+                                <th>السبب</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var l in Model.Leaves)
+                            {
+                                <tr>
+                                    <td>@l.LeaveType</td>
+                                    <td>@l.StartDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@l.EndDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@l.Reason</td>
+                                    <td>@l.Status</td>
+                                    <td>
+                                        @if (Model.CanEditLeaves)
+                                        {
+                                            <a asp-page="../Leaves/Edit" asp-route-id="@l.Id" class="btn btn-sm btn-warning me-2">تعديل</a>
+                                        }
+                                        @if (Model.CanDeleteLeaves)
+                                        {
+                                            <form method="post" asp-page-handler="DeleteLeave" class="d-inline">
+                                                <input type="hidden" name="Id" value="@Model.Id" />
+                                                <input type="hidden" name="leaveId" value="@l.Id" />
+                                                <button type="submit" class="btn btn-sm btn-danger">حذف</button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="alert alert-secondary">لا توجد إجازات.</div>
+                }
+            </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
