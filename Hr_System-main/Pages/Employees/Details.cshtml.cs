@@ -17,6 +17,9 @@ namespace Hr_System.Pages.Employees
             _db = db;
         }
 
+        [BindProperty(SupportsGet = true)]
+        public int Id { get; set; }
+
         public int EmployeeId { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string JobTitle { get; set; } = string.Empty;
@@ -42,8 +45,19 @@ namespace Hr_System.Pages.Employees
                 return Forbid();
             }
 
+            Id = id;
+            if (!await LoadDetailsAsync())
+            {
+                return NotFound();
+            }
+
+            return Page();
+        }
+
+        private async Task<bool> LoadDetailsAsync()
+        {
             var employee = await _db.Employees
-                .Where(e => e.Id == id)
+                .Where(e => e.Id == Id)
                 .Select(e => new
                 {
                     e.Id,
@@ -72,7 +86,7 @@ namespace Hr_System.Pages.Employees
 
             if (employee == null)
             {
-                return NotFound();
+                return false;
             }
 
             EmployeeId = employee.Id;
@@ -85,7 +99,43 @@ namespace Hr_System.Pages.Employees
             Attachments = employee.Attachments;
             Leaves = employee.Leaves;
 
-            return Page();
+            return true;
+        }
+
+        public async Task<IActionResult> OnPostOpenAttachmentAsync(int attachmentId)
+        {
+            var isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
+            if (!User.HasPermission(PermissionConstants.AttachmentsManage))
+            {
+                if (!await LoadDetailsAsync())
+                {
+                    if (isAjax) return new JsonResult(new { success = false, message = "الموظف غير موجود." });
+                    return NotFound();
+                }
+
+                if (isAjax) return new JsonResult(new { success = false, message = "ليس لديك صلاحية إدارة المرفقات، راجع قسم المعلوماتية." });
+
+                TempData["ErrorMessage"] = "ليس لديك صلاحية إدارة المرفقات، راجع قسم المعلوماتية.";
+                return Page();
+            }
+
+            var attachment = await _db.EmployeeAttachments.FindAsync(attachmentId);
+            if (attachment == null || attachment.EmployeeId != Id)
+            {
+                if (isAjax) return new JsonResult(new { success = false, message = "المرفق غير موجود." });
+                return NotFound();
+            }
+
+            var url = Url.Page("DownloadAttachment", new { id = attachmentId });
+            if (isAjax) return new JsonResult(new { success = true, url });
+
+            var contentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("inline")
+            {
+                FileName = attachment.FileName
+            };
+            Response.Headers["Content-Disposition"] = contentDisposition.ToString();
+            return File(attachment.Data, attachment.ContentType);
         }
 
         // Attachment upload handler moved to Edit page (OnPostAddAttachmentAsync)

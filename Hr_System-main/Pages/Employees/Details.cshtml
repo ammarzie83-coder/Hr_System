@@ -28,13 +28,24 @@
                 <ul class="list-group mb-3">
                     @foreach (var file in Model.Attachments)
                     {
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <li class="list-group-item d-flex justify-content-between align-items-center" data-attachment-id="@file.Id">
                             <span>@file.FileName</span>
                             <div>
-                                <a asp-page="DownloadAttachment" asp-route-id="@file.Id" target="_blank" class="btn btn-sm btn-outline-primary">فتح</a>
+                                @if (Model.CanManageAttachments)
+                                {
+                                    <a asp-page="DownloadAttachment" asp-route-id="@file.Id" target="_blank" class="btn btn-sm btn-outline-primary">فتح</a>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="OpenAttachment" class="d-inline attachment-open-form">
+                                        <input type="hidden" name="Id" value="@Model.EmployeeId" />
+                                        <input type="hidden" name="attachmentId" value="@file.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">فتح</button>
+                                    </form>
+                                }
                             </div>
                         </li>
-                    }
+                    } 
                 </ul>
             }
             else
@@ -86,4 +97,41 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (function(){
+            function showAlert(type, message) {
+                const existing = document.querySelector('.fixed-alert-top');
+                if (existing) existing.remove();
+                const div = document.createElement('div');
+                div.className = `fixed-alert-top alert alert-${type} alert-dismissible fade show`;
+                div.style.position = 'fixed';
+                div.style.top = '10px';
+                div.style.left = '50%';
+                div.style.transform = 'translateX(-50%)';
+                div.style.zIndex = '10850';
+                div.style.maxWidth = '900px';
+                div.setAttribute('role','alert');
+                div.innerHTML = `<strong>${type === 'danger' ? '✗ خطأ!' : '✓ نجاح!'}</strong> ${message} <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
+                div.classList.add('mt-2');
+                document.body.appendChild(div);
+                setTimeout(()=>{ try{ var bs = bootstrap.Alert.getOrCreateInstance(div); bs.close(); }catch(e){} }, 5000);
+            }
+
+            document.querySelectorAll('.attachment-open-form').forEach(form=>{
+                form.addEventListener('submit', async function(e){
+                    e.preventDefault();
+                    const fd = new FormData(form);
+                    try{
+                        const res = await fetch(form.action || window.location.href, { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body: fd });
+                        const data = await res.json();
+                        if (!data.success) { showAlert('danger', data.message || 'غير مسموح'); return; }
+                        if (data.url) {
+                            window.open(data.url, '_blank');
+                        }
+                    }catch(err){ showAlert('danger','حدث خطأ أثناء فتح الملف.'); }
+                });
+            });
+        })();
+    </script>
 }

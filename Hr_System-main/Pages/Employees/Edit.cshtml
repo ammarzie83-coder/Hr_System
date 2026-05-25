@@ -57,31 +57,46 @@
         <h4>إدارة المرفقات</h4>
             @if (Model.CanManageAttachments)
             {
-                <form method="post" enctype="multipart/form-data" asp-page-handler="AddAttachment" class="row g-3 mb-3">
+                <form method="post" enctype="multipart/form-data" asp-page-handler="AddAttachment" asp-route-id="@Model.Id" class="row g-3 mb-3 attachment-add-form">
                     <input type="hidden" name="Id" value="@Model.Id" />
-                    <div class="col-md-8">
-                        <input asp-for="AttachmentUpload" class="form-control" type="file" accept="application/pdf" />
+                    <div class="col-md-6">
+                        <input asp-for="AttachmentUpload" class="form-control" type="file" accept="application/pdf" id="attachmentUploadFile" />
                         <span asp-validation-for="AttachmentUpload" class="text-danger"></span>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
+                        <input asp-for="AttachmentName" class="form-control" placeholder="اسم المرفق" id="attachmentUploadName" />
+                        <span asp-validation-for="AttachmentName" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
                         <button type="submit" class="btn btn-primary">إضافة ملف PDF</button>
                     </div>
                 </form>
             }
 
             @* عرض المرفقات مع إمكانية الحذف *@
-            <div class="mb-3">
+            <div class="mb-3" id="attachment-list-container">
                 <h5>المرفقات الحالية</h5>
                 @if (Model.Attachments.Any())
                 {
                     <ul class="list-group mb-3">
                         @foreach (var a in Model.Attachments)
                         {
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <li class="list-group-item d-flex justify-content-between align-items-center" data-attachment-id="@a.Id">
                                 <span>@a.FileName</span>
                                 <div>
-                                    <a asp-page="DownloadAttachment" asp-route-id="@a.Id" target="_blank" class="btn btn-sm btn-outline-primary me-2">فتح</a>
-                                    <form method="post" asp-page-handler="DeleteAttachment" class="d-inline">
+                                    @if (Model.CanManageAttachments)
+                                    {
+                                        <a asp-page="DownloadAttachment" asp-route-id="@a.Id" target="_blank" class="btn btn-sm btn-outline-primary me-2">فتح</a>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="OpenAttachment" asp-route-id="@Model.Id" class="d-inline attachment-open-form">
+                                            <input type="hidden" name="Id" value="@Model.Id" />
+                                            <input type="hidden" name="attachmentId" value="@a.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-primary me-2">فتح</button>
+                                        </form>
+                                    }
+                                    <form method="post" asp-page-handler="DeleteAttachment" asp-route-id="@Model.Id" class="d-inline attachment-delete-form">
                                         <input type="hidden" name="Id" value="@Model.Id" />
                                         <input type="hidden" name="attachmentId" value="@a.Id" />
                                         <button type="submit" class="btn btn-sm btn-danger">حذف</button>
@@ -93,7 +108,7 @@
                 }
                 else
                 {
-                    <div class="alert alert-secondary">لا توجد مرفقات.</div>
+                    <div class="alert alert-secondary attachment-empty-state">لا توجد مرفقات.</div>
                 }
             </div>
 
@@ -178,4 +193,170 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (function(){
+            const downloadPageUrl = '@Url.Page("DownloadAttachment")';
+            const antiForgeryInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            const antiForgeryHiddenHtml = antiForgeryInput ? `<input type="hidden" name="__RequestVerificationToken" value="${antiForgeryInput.value}" />` : '';
+            function showAlert(type, message) {
+                // fixed-top alert that doesn't push page content
+                const existing = document.querySelector('.fixed-alert-top');
+                if (existing) existing.remove();
+                const div = document.createElement('div');
+                div.className = `fixed-alert-top alert alert-${type} alert-dismissible fade show`;
+                div.style.position = 'fixed';
+                div.style.top = '10px';
+                div.style.left = '50%';
+                div.style.transform = 'translateX(-50%)';
+                div.style.zIndex = '10850';
+                div.style.maxWidth = '900px';
+                div.setAttribute('role','alert');
+                div.innerHTML = `<strong>${type === 'danger' ? '✗ خطأ!' : '✓ نجاح!'}</strong> ${message} <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
+                div.classList.add('mt-2');
+                div.classList.add('fixed-alert-top');
+                document.body.appendChild(div);
+                setTimeout(()=>{ try{ var bs = bootstrap.Alert.getOrCreateInstance(div); bs.close(); }catch(e){} }, 5000);
+            }
+
+            // helper to attach delete handler to a specific form
+            function attachDeleteHandler(form){
+                form.addEventListener('submit', async function(e){
+                    e.preventDefault();
+                    const fd = new FormData(form);
+                    try{
+                        const res = await fetch(form.action || window.location.href, { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body: fd });
+                        const data = await res.json();
+                        if (!data.success) { showAlert('danger', data.message || 'خطأ غير معروف'); return; }
+                        const li = form.closest('li[data-attachment-id]');
+                        if (li) li.remove();
+                        showAlert('success', data.message || 'تم حذف المرفق بنجاح.');
+                    }catch(err){ showAlert('danger', 'حدث خطأ أثناء الحذف.'); }
+                });
+            }
+
+            document.querySelectorAll('.attachment-delete-form').forEach(attachDeleteHandler);
+
+            document.querySelectorAll('.attachment-open-form').forEach(form=>{
+                form.addEventListener('submit', async function(e){
+                    e.preventDefault();
+                    const fd = new FormData(form);
+                    try{
+                        const res = await fetch(form.action || window.location.href, { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body: fd });
+                        const data = await res.json();
+                        if (!data.success) { showAlert('danger', data.message || 'غير مسموح'); return; }
+                        if (data.url) {
+                            window.open(data.url, '_blank');
+                        }
+                    }catch(err){ showAlert('danger','حدث خطأ أثناء فتح الملف.'); }
+                });
+            });
+
+            // Add attachment via AJAX with upload progress and prevent navigation when no file chosen
+            const addForm = document.querySelector('.attachment-add-form');
+            if (addForm){
+                const fileInputField = addForm.querySelector('#attachmentUploadFile');
+                const nameInputField = addForm.querySelector('#attachmentUploadName');
+
+                fileInputField?.addEventListener('change', function(){
+                    if (!nameInputField) return;
+                    if (nameInputField.value.trim() !== '') return;
+                    const file = fileInputField.files?.[0];
+                    if (!file) return;
+                    const baseName = file.name.replace(/\.pdf$/i, '');
+                    nameInputField.value = baseName;
+                });
+
+                addForm.addEventListener('submit', function(e){
+                    e.preventDefault();
+                    const fileInput = addForm.querySelector('input[type="file"]');
+                    const nameInput = addForm.querySelector('#attachmentUploadName');
+                    if (!fileInput || !fileInput.files || fileInput.files.length === 0){
+                        showAlert('danger','يرجى اختيار ملف PDF.');
+                        return;
+                    }
+                    if (!nameInput || !nameInput.value.trim()){
+                        showAlert('danger','يرجى إدخال اسم للمرفق.');
+                        return;
+                    }
+
+                    const fd = new FormData(addForm);
+
+                    // create progress UI
+                    let progressContainer = document.querySelector('.attachment-upload-progress');
+                    if (progressContainer) progressContainer.remove();
+                    progressContainer = document.createElement('div');
+                    progressContainer.className = 'attachment-upload-progress mt-2';
+                    progressContainer.innerHTML = `
+                        <div class="progress" style="height:24px;">
+                          <div class="progress-bar" role="progressbar" style="width:0%" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        </div>`;
+                    addForm.parentNode.insertBefore(progressContainer, addForm.nextSibling);
+                    const progressBar = progressContainer.querySelector('.progress-bar');
+
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', addForm.action || window.location.href, true);
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+                    xhr.upload.onprogress = function(evt){
+                        if (evt.lengthComputable){
+                            const percent = Math.round((evt.loaded / evt.total) * 100);
+                            progressBar.style.width = percent + '%';
+                            progressBar.textContent = percent + '%';
+                        }
+                    };
+
+                    xhr.onload = function(){
+                        try{
+                            const data = JSON.parse(xhr.responseText || '{}');
+                            if (!data.success) { showAlert('danger', data.message || 'فشل إضافة المرفق'); progressContainer.remove(); return; }
+
+                            // append new list item
+                            const list = document.querySelector('ul.list-group.mb-3');
+                            const id = data.attachment?.id ?? 0;
+                            const name = data.attachment?.fileName ?? data.fileName ?? 'مرفق';
+                            const currentId = addForm.querySelector('input[name="Id"]').value;
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                            li.setAttribute('data-attachment-id', id);
+                            const deleteAction = `${window.location.pathname}?id=${encodeURIComponent(currentId)}&handler=DeleteAttachment`;
+                            li.innerHTML = `
+                                <span>${name}</span>
+                                <div>
+                                    <a href="${downloadPageUrl}?id=${id}" target="_blank" class="btn btn-sm btn-outline-primary me-2">فتح</a>
+                                    <form method="post" action="${deleteAction}" class="d-inline attachment-delete-form">
+                                        ${antiForgeryHiddenHtml}
+                                        <input type="hidden" name="Id" value="${currentId}" />
+                                        <input type="hidden" name="attachmentId" value="${id}" />
+                                        <button type="submit" class="btn btn-sm btn-danger">حذف</button>
+                                    </form>
+                                </div>`;
+                            let listContainer = list;
+                            if (!listContainer) {
+                                const container = document.querySelector('#attachment-list-container');
+                                const emptyState = container?.querySelector('.attachment-empty-state');
+                                if (emptyState) emptyState.remove();
+                                listContainer = document.createElement('ul');
+                                listContainer.className = 'list-group mb-3';
+                                container?.appendChild(listContainer);
+                            }
+                            listContainer.appendChild(li);
+                            const newDeleteForm = li.querySelector('.attachment-delete-form');
+                            if (newDeleteForm) attachDeleteHandler(newDeleteForm);
+                            // clear file input
+                            fileInput.value = '';
+                            // remove progress UI
+                            if (progressContainer) progressContainer.remove();
+                            showAlert('success', data.message || 'تم إضافة المرفق بنجاح.');
+                        }catch(err){ if (progressContainer) progressContainer.remove(); showAlert('danger','حدث خطأ أثناء إضافة المرفق.'); }
+                    };
+
+                    xhr.onerror = function(){ if (progressContainer) progressContainer.remove(); showAlert('danger','حدث خطأ أثناء إضافة المرفق.'); };
+
+                    xhr.send(fd);
+                });
+            }
+        })();
+    </script>
 }
+

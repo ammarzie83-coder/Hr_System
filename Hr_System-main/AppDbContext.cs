@@ -44,6 +44,10 @@ namespace Hr_System.Data
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(120);
                 entity.Property(e => e.PhotoContentType).HasMaxLength(100);
                 entity.Property(e => e.PhotoData).HasColumnType("varbinary(max)");
+                // Add indexes for commonly searched columns
+                entity.HasIndex(e => e.NationalId);
+                entity.HasIndex(e => e.Email);
+                entity.HasIndex(e => e.Department);
             });
 
             modelBuilder.Entity<EmployeeAttachment>(entity =>
@@ -52,6 +56,8 @@ namespace Hr_System.Data
                 entity.Property(a => a.ContentType).IsRequired().HasMaxLength(100);
                 entity.Property(a => a.Data).IsRequired().HasColumnType("varbinary(max)");
                 entity.HasOne(a => a.Employee).WithMany(e => e.Attachments).HasForeignKey(a => a.EmployeeId);
+                // Add index for foreign key to optimize grouping
+                entity.HasIndex(a => a.EmployeeId);
             });
 
             modelBuilder.Entity<LeaveRequest>(entity =>
@@ -60,6 +66,9 @@ namespace Hr_System.Data
                 entity.Property(l => l.Reason).IsRequired().HasMaxLength(300);
                 entity.Property(l => l.Status).IsRequired().HasMaxLength(40);
                 entity.HasOne(l => l.Employee).WithMany(e => e.LeaveRequests).HasForeignKey(l => l.EmployeeId);
+                // Add index for foreign key to optimize grouping and filtering
+                entity.HasIndex(l => l.EmployeeId);
+                entity.HasIndex(l => l.Status);
             });
 
             modelBuilder.Entity<AuditLog>(entity =>
@@ -68,6 +77,9 @@ namespace Hr_System.Data
                 entity.Property(a => a.Action).IsRequired().HasMaxLength(20);
                 entity.Property(a => a.KeyValues).IsRequired();
                 entity.Property(a => a.OldValues).HasColumnType("nvarchar(max)");
+                // Add indexes for audit log queries
+                entity.HasIndex(a => a.TableName);
+                entity.HasIndex(a => a.ChangedAt);
                 entity.Property(a => a.NewValues).HasColumnType("nvarchar(max)");
                 entity.Property(a => a.ChangedBy).IsRequired().HasMaxLength(100);
                 entity.Property(a => a.ChangedAt).IsRequired();

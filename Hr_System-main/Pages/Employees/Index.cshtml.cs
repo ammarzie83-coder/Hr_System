@@ -26,6 +26,25 @@ namespace Hr_System.Pages.Employees
 
         public async Task OnGetAsync()
         {
+            // Use a more efficient query by selecting count data in a separate query
+            // This avoids the N+1 problem and expensive subqueries
+            var employeeIds = await _db.Employees
+                .AsNoTracking()
+                .Select(e => e.Id)
+                .ToListAsync();
+
+            var leaveCounts = await _db.LeaveRequests
+                .AsNoTracking()
+                .GroupBy(l => l.EmployeeId)
+                .Select(g => new { EmployeeId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.EmployeeId, x => x.Count);
+
+            var attachmentCounts = await _db.EmployeeAttachments
+                .AsNoTracking()
+                .GroupBy(a => a.EmployeeId)
+                .Select(g => new { EmployeeId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.EmployeeId, x => x.Count);
+
             Employees = await _db.Employees
                 .AsNoTracking()
                 .Select(e => new EmployeeViewItem
@@ -38,8 +57,8 @@ namespace Hr_System.Pages.Employees
                     Mobile = e.Mobile,
                     Email = e.Email,
                     HireDate = e.HireDate,
-                    LeaveCount = e.LeaveRequests.Count,
-                    AttachmentCount = e.Attachments.Count
+                    LeaveCount = leaveCounts.ContainsKey(e.Id) ? leaveCounts[e.Id] : 0,
+                    AttachmentCount = attachmentCounts.ContainsKey(e.Id) ? attachmentCounts[e.Id] : 0
                 })
                 .OrderBy(e => e.FullName)
                 .ToListAsync();

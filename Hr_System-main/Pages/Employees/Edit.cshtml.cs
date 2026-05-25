@@ -36,6 +36,9 @@ namespace Hr_System.Pages.Employees
         public IFormFile? AttachmentUpload { get; set; }
 
         [BindProperty]
+        public string? AttachmentName { get; set; }
+
+        [BindProperty]
         public LeaveInputModel LeaveInput { get; set; } = new LeaveInputModel();
 
         public async Task<IActionResult> OnGetAsync()
@@ -125,26 +128,56 @@ namespace Hr_System.Pages.Employees
 
         public async Task<IActionResult> OnPostAddAttachmentAsync()
         {
+            var isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
             if (!User.HasPermission(PermissionConstants.AttachmentsManage))
             {
+                if (isAjax) return new JsonResult(new { success = false, message = "ليس لديك صلاحية إدارة المرفقات، راجع قسم المعلوماتية." });
                 return Forbid();
             }
 
             var employee = await _db.Employees.FindAsync(Id);
             if (employee == null)
             {
+                if (isAjax) return new JsonResult(new { success = false, message = "الموظف غير موجود." });
                 return NotFound();
             }
 
             if (AttachmentUpload == null)
             {
+                if (isAjax) return new JsonResult(new { success = false, message = "يرجى اختيار ملف PDF." });
                 ModelState.AddModelError("AttachmentUpload", "يرجى اختيار ملف PDF.");
+                await LoadRelatedDataAsync();
+                return Page();
+            }
+
+            if (string.IsNullOrWhiteSpace(AttachmentName))
+            {
+                if (isAjax) return new JsonResult(new { success = false, message = "يرجى إدخال اسم للمرفق." });
+                ModelState.AddModelError("AttachmentName", "يرجى إدخال اسم للمرفق.");
+                await LoadRelatedDataAsync();
+                return Page();
+            }
+
+            var cleanedName = AttachmentName?.Trim() ?? string.Empty;
+            if (!cleanedName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                cleanedName += ".pdf";
+            }
+
+            var existsDuplicate = await _db.EmployeeAttachments
+                .AnyAsync(a => a.EmployeeId == Id && a.FileName == cleanedName);
+            if (existsDuplicate)
+            {
+                if (isAjax) return new JsonResult(new { success = false, message = "يوجد مرفق بنفس الاسم، يرجى تغيير الاسم قبل الرفع." });
+                ModelState.AddModelError("AttachmentName", "يوجد مرفق بنفس الاسم، يرجى تغيير الاسم قبل الرفع.");
                 await LoadRelatedDataAsync();
                 return Page();
             }
 
             if (AttachmentUpload.ContentType != "application/pdf")
             {
+                if (isAjax) return new JsonResult(new { success = false, message = "يجب أن يكون الملف بصيغة PDF." });
                 ModelState.AddModelError("AttachmentUpload", "يجب أن يكون الملف بصيغة PDF.");
                 await LoadRelatedDataAsync();
                 return Page();
@@ -156,13 +189,19 @@ namespace Hr_System.Pages.Employees
             var attachment = new EmployeeAttachment
             {
                 EmployeeId = Id,
-                FileName = AttachmentUpload.FileName,
+                FileName = cleanedName,
                 ContentType = AttachmentUpload.ContentType,
                 Data = ms.ToArray()
             };
 
             _db.EmployeeAttachments.Add(attachment);
             await _db.SaveChangesAsync();
+
+            if (isAjax)
+            {
+                return new JsonResult(new { success = true, message = "تم إضافة المرفق بنجاح.", attachment = new { id = attachment.Id, fileName = attachment.FileName } });
+            }
+
             TempData["SuccessMessage"] = "تم إضافة المرفق بنجاح.";
             return RedirectToPage(new { id = Id });
         }
@@ -202,21 +241,80 @@ namespace Hr_System.Pages.Employees
             return RedirectToPage(new { id = Id });
         }
 
-        public async Task<IActionResult> OnPostDeleteAttachmentAsync(int attachmentId)
+        public async Task<IActionResult> OnPostOpenAttachmentAsync(int attachmentId)
         {
+            var isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
             if (!User.HasPermission(PermissionConstants.AttachmentsManage))
             {
-                return Forbid();
+                if (isAjax)
+                {
+                    return new JsonResult(new { success = false, message = "ليس لديك صلاحية إدارة المرفقات، راجع قسم المعلوماتية." });
+                }
+
+                TempData["ErrorMessage"] = "ليس لديك صلاحية إدارة المرفقات، راجع قسم المعلوماتية.";
+                await LoadRelatedDataAsync();
+                return Page();
             }
 
             var attachment = await _db.EmployeeAttachments.FindAsync(attachmentId);
             if (attachment == null || attachment.EmployeeId != Id)
             {
+                if (isAjax) return new JsonResult(new { success = false, message = "المرفق غير موجود." });
+                return NotFound();
+            }
+
+            var isAjaxSuccessUrl = Url.Page("DownloadAttachment", new { id = attachmentId });
+            if (isAjax)
+            {
+                return new JsonResult(new { success = true, url = isAjaxSuccessUrl });
+            }
+
+            var contentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("inline")
+            {
+                FileName = attachment.FileName
+            };
+            Response.Headers["Content-Disposition"] = contentDisposition.ToString();
+            return File(attachment.Data, attachment.ContentType);
+        }
+
+        public async Task<IActionResult> OnPostDeleteAttachmentAsync(int attachmentId)
+        {
+            var isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
+            if (!User.HasPermission(PermissionConstants.AttachmentsManage))
+            {
+                if (isAjax) return new JsonResult(new { success = false, message = "ليس لديك صلاحية إدارة المرفقات، راجع قسم المعلوماتية." });
+
+                TempData["ErrorMessage"] = "ليس لديك صلاحية إدارة المرفقات، راجع قسم المعلوماتية.";
+                await LoadRelatedDataAsync();
+                return Page();
+            }
+
+            var attachment = await _db.EmployeeAttachments
+                .FirstOrDefaultAsync(a => a.Id == attachmentId && a.EmployeeId == Id);
+
+            if (attachment == null)
+            {
+                if (isAjax) return new JsonResult(new { success = false, message = "المرفق غير موجود." });
                 return NotFound();
             }
 
             _db.EmployeeAttachments.Remove(attachment);
-            await _db.SaveChangesAsync();
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (isAjax) return new JsonResult(new { success = false, message = "فشل حذف المرفق، ربما تم حذفه بالفعل." });
+
+                TempData["ErrorMessage"] = "فشل حذف المرفق، ربما تم حذفه بالفعل.";
+                return RedirectToPage(new { id = Id });
+            }
+
+            if (isAjax) return new JsonResult(new { success = true, message = "تم حذف المرفق بنجاح.", attachmentId });
+
             TempData["SuccessMessage"] = "تم حذف المرفق بنجاح.";
             return RedirectToPage(new { id = Id });
         }

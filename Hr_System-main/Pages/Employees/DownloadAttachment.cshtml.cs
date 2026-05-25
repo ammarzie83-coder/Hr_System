@@ -12,6 +12,7 @@ namespace Hr_System.Pages.Employees
     {
         private readonly AppDbContext _db;
 
+
         public DownloadAttachmentModel(AppDbContext db)
         {
             _db = db;
@@ -19,18 +20,17 @@ namespace Hr_System.Pages.Employees
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            if (!User.HasPermission(PermissionConstants.AttachmentsManage))
-            {
-                return Forbid();
-            }
-
             var attachment = await _db.EmployeeAttachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
             if (attachment == null)
             {
                 return NotFound();
             }
 
-            // Properly encode filename for Content-Disposition header to handle non-ASCII characters
+            if (!User.HasPermission(PermissionConstants.AttachmentsManage))
+            {
+                return Forbid();
+            }
+
             var contentDisposition = new ContentDispositionHeaderValue("inline")
             {
                 FileName = attachment.FileName
