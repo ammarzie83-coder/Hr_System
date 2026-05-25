@@ -98,6 +98,23 @@ app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        if (context.Response.ContentType is string contentType && contentType.Contains("text/html", StringComparison.OrdinalIgnoreCase))
+        {
+            // Set caching headers before the response starts to avoid read-only headers error
+            context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            context.Response.Headers["Pragma"] = "no-cache";
+            context.Response.Headers["Expires"] = "0";
+        }
+        return Task.CompletedTask;
+    });
+
+    await next();
+});
+
 app.MapStaticAssets();
 
 app.MapRazorPages()

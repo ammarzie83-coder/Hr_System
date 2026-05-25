@@ -10,7 +10,12 @@ namespace Hr_System.Pages.Account
         public async Task<IActionResult> OnGetAsync(string reason = "")
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            
+            HttpContext.Session.Clear();
+            Response.Cookies.Delete("HrSystemAuth");
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
+
             // حفظ رسالة سبب الخروج
             if (!string.IsNullOrEmpty(reason))
             {
@@ -26,7 +31,7 @@ namespace Hr_System.Pages.Account
             // مسح آخر صفحة من السشن
             HttpContext.Session.Remove("LastPage");
 
-            return RedirectToPage("/Account/Login");
+            return Page();
         }
     }
 }

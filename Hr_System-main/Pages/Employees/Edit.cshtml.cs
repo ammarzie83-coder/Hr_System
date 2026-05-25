@@ -291,24 +291,15 @@ namespace Hr_System.Pages.Employees
                 return Page();
             }
 
-            var attachment = await _db.EmployeeAttachments
-                .FirstOrDefaultAsync(a => a.Id == attachmentId && a.EmployeeId == Id);
+            // Use a set-based delete to avoid concurrency exceptions when the tracked entity
+            // was already removed or not tracked by the current DbContext.
+            var deleted = await _db.EmployeeAttachments
+                .Where(a => a.Id == attachmentId && a.EmployeeId == Id)
+                .ExecuteDeleteAsync();
 
-            if (attachment == null)
-            {
-                if (isAjax) return new JsonResult(new { success = false, message = "المرفق غير موجود." });
-                return NotFound();
-            }
-
-            _db.EmployeeAttachments.Remove(attachment);
-            try
-            {
-                await _db.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
+            if (deleted == 0)
             {
                 if (isAjax) return new JsonResult(new { success = false, message = "فشل حذف المرفق، ربما تم حذفه بالفعل." });
-
                 TempData["ErrorMessage"] = "فشل حذف المرفق، ربما تم حذفه بالفعل.";
                 return RedirectToPage(new { id = Id });
             }

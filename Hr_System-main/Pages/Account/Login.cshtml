@@ -56,7 +56,17 @@
             <em>صلاحيات: عرض الموظفين والمرفقات فقط</em></p>
         </div>
 
-        <form method="post" class="row g-3">
+        <div id="loginErrorMessage">
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>✗ خطأ!</strong> @Model.ErrorMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+        </div>
+
+        <form id="loginForm" method="post" class="row g-3">
             <div class="col-12">
                 <label asp-for="Username" class="form-label"></label>
                 <input asp-for="Username" class="form-control" />
@@ -79,4 +89,55 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const form = document.getElementById('loginForm');
+            const errorContainer = document.getElementById('loginErrorMessage');
+
+            if (window.history && window.history.pushState) {
+                window.history.pushState(null, '', window.location.href);
+                window.addEventListener('popstate', function () {
+                    window.history.pushState(null, '', window.location.href);
+                    window.location.replace('/Account/Login');
+                });
+            }
+
+            if (!form) return;
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                errorContainer.innerHTML = '';
+
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch(form.action || window.location.href, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        errorContainer.innerHTML = `
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <strong>✗ خطأ!</strong> ${data.message || 'فشل تسجيل الدخول.'}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>`;
+                        return;
+                    }
+
+                    window.location.replace(data.redirectUrl || '/Employees/Index');
+                } catch (error) {
+                    errorContainer.innerHTML = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>✗ خطأ!</strong> حدث خطأ أثناء محاولة تسجيل الدخول. حاول مجدداً.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>`;
+                }
+            });
+        })();
+    </script>
 }

@@ -39,18 +39,18 @@
         <input asp-for="Input.Role" class="form-control" />
         <span asp-validation-for="Input.Role" class="text-danger"></span>
     </div>
-    <div class="col-md-4">
+    @* <div class="col-md-4">
         <div class="form-check mt-3">
             <input asp-for="Input.IsInformatics" class="form-check-input" id="IsInformatics" />
             <label class="form-check-label" for="IsInformatics">حساب معلوماتية (Informatics)</label>
         </div>
-    </div>
+    </div> *@
 
     <div class="col-12">
         <h5>الصلاحيات (تحديد)</h5>
         <div class="form-check form-check-inline">
             <input asp-for="Input.CanViewEmployees" class="form-check-input" />
-            <label class="form-check-label">عرض الموظفين</label>
+            <label class="form-check-labsel">عرض الموظفين</label>
         </div>
         <div class="form-check form-check-inline">
             <input asp-for="Input.CanAddEmployees" class="form-check-input" />

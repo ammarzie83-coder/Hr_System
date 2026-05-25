@@ -29,8 +29,15 @@ namespace Hr_System.Pages.Account
     public string SuccessMessage { get; set; } = string.Empty;
         public string ErrorMessage { get; set; } = string.Empty;
 
-        public void OnGet()
+        public IActionResult OnGet()
         {
+            if (User.Identity?.IsAuthenticated ?? false)
+            {
+                return RedirectToPage("/Employees/Index");
+            }
+
+            ClearSessionAndSetNoCache();
+
             // تحقق من وجود رسائل من TempData: رسالة نجاح أو رسالة انتهاء/سبب الخروج
             if (TempData.TryGetValue("SuccessMessage", out var success))
             {
@@ -40,13 +47,26 @@ namespace Hr_System.Pages.Account
             {
                 ErrorMessage = message?.ToString() ?? "انتهت مهلة جلسة العمل، يرجى تسجيل الدخول مجدداً.";
             }
+
+            return Page();
+        }
+
+        private void ClearSessionAndSetNoCache()
+        {
+            HttpContext.Session.Clear();
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
+            var isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
             if (!ModelState.IsValid)
             {
                 ErrorMessage = "يرجى ملء جميع الحقول المطلوبة.";
+                if (isAjax) return new JsonResult(new { success = false, message = ErrorMessage });
                 return Page();
             }
 
@@ -56,12 +76,14 @@ namespace Hr_System.Pages.Account
             {
                 // Generic message to avoid user enumeration
                 ErrorMessage = "اسم المستخدم أو كلمة المرور غير صحيحة.";
+                if (isAjax) return new JsonResult(new { success = false, message = ErrorMessage });
                 return Page();
             }
 
             if (!user.IsActive)
             {
                 ErrorMessage = "الحساب غير مفعل، يرجى التواصل مع قسم المعلوماتية لإعادة التفعيل.";
+                if (isAjax) return new JsonResult(new { success = false, message = ErrorMessage });
                 return Page();
             }
 
@@ -75,11 +97,13 @@ namespace Hr_System.Pages.Account
                     user.LockoutEndUtc = DateTime.UtcNow;
                     await _db.SaveChangesAsync();
                     ErrorMessage = "تم قفل الحساب مؤقتاً بعد محاولات كلمة مرور خاطئة متعددة. تواصل مع المعلوماتية لإعادة التفعيل.";
+                    if (isAjax) return new JsonResult(new { success = false, message = ErrorMessage });
                     return Page();
                 }
 
                 await _db.SaveChangesAsync();
                 ErrorMessage = "اسم المستخدم أو كلمة المرور غير صحيحة.";
+                if (isAjax) return new JsonResult(new { success = false, message = ErrorMessage });
                 return Page();
             }
 
@@ -108,6 +132,11 @@ namespace Hr_System.Pages.Account
                 });
 
             SuccessMessage = $"مرحباً {user.DisplayName}، تم تسجيل الدخول بنجاح! 🎉";
+            if (isAjax)
+            {
+                return new JsonResult(new { success = true, redirectUrl = Url.Page("/Employees/Index") });
+            }
+
             return RedirectToPage("/Employees/Index");
         }
 
